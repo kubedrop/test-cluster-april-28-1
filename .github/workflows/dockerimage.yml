@@ -1,0 +1,29 @@
+name: Docker Image CI
+
+on:
+  create:
+  push:
+    branches:
+      - develop
+      - stage
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      image_repo: ${{ secrets.DOCKER_REPO }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Login to Docker Registry
+      run: echo ${{ secrets.DOCKER_TOKEN }} | docker login -u ${{ secrets.DOCKER_USER }} --password-stdin
+    - name: Build Docker Image
+      run: |
+        docker build . --file Dockerfile --tag $image_repo:latest
+    - name: Push image to the Registry
+      run: |
+        commit_id=${GITHUB_SHA:0:7}
+        prefix=${GITHUB_REF#"refs/heads/"}
+        tag=$prefix-$commit_id
+        docker tag $image_repo:latest $image_repo:$tag
+        docker push $image_repo:$tag

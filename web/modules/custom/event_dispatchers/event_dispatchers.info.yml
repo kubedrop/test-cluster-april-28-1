@@ -1,0 +1,13 @@
+type: module
+name: Event Dispatcher
+description: 'Dispatches events on entity create, update and delete.'
+package: Event
+# core: 8.x
+
+# Information added by Drupal.org packaging script on 2018-01-19
+version: '8.x-1.1'
+core: '8.x'
+project: 'event_dispatchers'
+
+datestamp: 1516355891
+core_version_requirement: ^8 || ^9

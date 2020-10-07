@@ -1,0 +1,106 @@
+# Drupal 8 StarterKit.
+version: '3.5'
+
+volumes:
+  app:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: ${PWD}
+  mysql-data:
+  # Converting core and vendor to the named volume will improve the speed meanwhile debugger will fail.
+  # core:               # drupal core
+  # vendor:             # php modules
+  files:
+networks:
+  default:
+    name: vega-${PROJECT_NAME}
+
+x-app-volumes: &app-volumes
+    #- files:${DOC_ROOT}/sites/default/files:delegated
+    - ./:/app:delegated
+    # - core:/app/web/core
+    # - vendor:/app/vendor
+
+    # Add any custom configuration files here
+
+x-cli-volumes: &cli-volumes
+    - ./:/app:delegated
+
+x-app-envsfile: &app-envsfile .env
+
+x-app-networks: &app-networks
+  - default
+
+services:
+  # Change mounted named volumes user from root(default) to continua.
+  chown:
+    image: "srijanlabs/php-cli:${PHP_VERSION}-buster"
+    container_name: ${PROJECT_NAME}_chown
+    entrypoint: [ "bash", "-c"]
+    command:
+      - "chown -R continua:continua /app"
+    user: root
+    depends_on:
+      - cli
+    volumes: *app-volumes
+
+  cli:
+    image: "srijanlabs/php-cli:${PHP_VERSION}-buster"
+    container_name: ${PROJECT_NAME}_cli
+    command: ["composer", "install", "--no-dev", "--prefer-dist", "--no-progress", "--no-suggest", "--no-interaction", "--optimize-autoloader"]
+    user: root
+    working_dir: /app
+    volumes:  *cli-volumes
+    networks: *app-networks
+    env_file:  *app-envsfile
+    environment:
+      - COMPOSER_MEMORY_LIMIT=-1 # Prevent composer from running out of memory
+
+  drupal:
+    image: srijanlabs/php-fpm-apache:${PHP_VERSION}-buster-local
+    build:
+      dockerfile: Dockerfile.dev
+      context: .
+      args:
+        PHP_VERSION: ${PHP_VERSION}
+    container_name: ${PROJECT_NAME}_drupal
+    depends_on:
+      - mysql
+    ports:
+      - ${APPLICATION_PORT}:8080
+    volumes: *app-volumes
+    networks: *app-networks
+    env_file:  *app-envsfile
+
+  mysql:
+    image: mysql:5.7
+    container_name: ${PROJECT_NAME}_mysql
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+    networks: *app-networks
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  # blackfire:
+  #   image: blackfire/blackfire
+  #   container_name: ${PROJECT_NAME}_blackfire
+  #   ports:
+  #     - "8707:8707"
+  #   environment:
+  #     # Exposes BLACKFIRE_SERVER_* environment variables from the host
+  #     BLACKFIRE_SERVER_ID: ${BLACKFIRE_SERVER_ID}
+  #     BLACKFIRE_SERVER_TOKEN: ${BLACKFIRE_SERVER_TOKEN}
+  #   networks: *app-networks

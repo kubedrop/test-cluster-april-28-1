@@ -1,0 +1,89 @@
+<?php
+
+/**
+ * @file
+ * Contains event_dispatcher.module.
+ */
+
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\event_dispatchers\EntityEventDispatcherType;
+use Drupal\event_dispatchers\Event\EntityEvent;
+use Symfony\Component\EventDispatcher\Event;
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Implements hook_help().
+ */
+function event_dispatchers_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+      // Main module help for the event_dispatcher module.
+  case 'help.page.event_dispatcher':
+    $output = '';
+    $output .= '<h3>' . t('About') . '</h3>';
+    $output .= '<p>' . t('Provides event dispatcher for events like kernel, entity insert, entity delete, entity update
+    and other drupal event')
+      . '</p>';
+    $output .= '<p>' . t('Also provide Apache Kafka integration with drupal event, Once kafka configured success fully,
+    drupal events are map on kafka server as kafka topics' )
+      . '</p>';
+    $output .= '<h3>' . t('What is Kafka') . '</h3>';
+    $output .= '<p>' . t('Apache Kafka is an open-source stream-processing software platform which is used to handle the
+     real-time data storage. It works as a broker between two parties, i.e., a sender and a receiver. It can handle
+     about trillions of data events in a day.' )
+      . '</p>';
+    $output .= '<p> <a href="/admin/config/system/kafka_configuration">' . t('Click here') . '</a>' . t(' to configure
+    kafka.') . '</p>';
+    $output .= '<h3>' . t('Kafka Requirements') . '</h3>';
+    $output .= '<p>' . t('PHP 5.6 and above, libkafka v0.11.0, php extension rdkafka-3.0.3') . '</p>';
+    return $output;
+    default:
+  }
+}
+
+/**
+ * Implements hook_entity_insert().
+ *
+ * {@inheritdoc}
+ */
+function event_dispatchers_entity_insert(EntityInterface $entity) {
+  $event_type = EntityEventDispatcherType::INSERT;
+  $event = new EntityEvent($event_type, $entity);
+  _event_dispatcher_dispatch($event_type, $event);
+}
+
+/**
+ * Implements hook_entity_update().
+ *
+ * { @inheritdoc }
+ */
+function event_dispatchers_entity_update(EntityInterface $entity) {
+  $event_type = EntityEventDispatcherType::UPDATE;
+  $event = new EntityEvent($event_type, $entity);
+  _event_dispatcher_dispatch($event_type, $event);
+}
+
+/**
+ * Implements hook_entity_delete().
+ *
+ * {@inheritdoc}
+ */
+function event_dispatchers_entity_delete(EntityInterface $entity) {
+  $event_type = EntityEventDispatcherType::DELETE;
+  $event = new EntityEvent($event_type, $entity);
+  _event_dispatcher_dispatch($event_type, $event);
+}
+
+/**
+ * Helper method to dispatch an event.
+ *
+ * @param string $event_type
+ *   The event type.
+ * @param \Symfony\Component\EventDispatcher\Event $event
+ *   The event to dispatch.
+ */
+
+function _event_dispatcher_dispatch($event_type, Event $event) {
+  /** @var \Symfony\Component\EventDispatcher\EventDispatcher $dispatcher */
+  $dispatcher = \Drupal::service('event_dispatcher');
+  $dispatcher->dispatch($event_type, $event);
+}

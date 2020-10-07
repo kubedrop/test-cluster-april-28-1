@@ -1,0 +1,10 @@
+type: module
+name: Event Dispatcher Kafka
+description: 'Provides apache kafka services'
+hidden: false
+dependencies:
+  - event_dispatchers
+configure: event_dispatcher_kafka.kafka_configuration_form
+version: '8.x-1.12'
+package: Event
+core_version_requirement: ^8.7.7 || ^9

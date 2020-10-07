@@ -1,0 +1,9 @@
+event_dispatcher_kafka.kafka_configuration_form:
+  path: '/admin/config/system/kafka_configuration'
+  defaults:
+    _form: 'Drupal\event_dispatcher_kafka\Form\KafkaConfigForm'
+    _title: 'Configure Event Dispatcher Kafka'
+  requirements:
+    _permission: 'access administration pages'
+  options:
+    _admin_route: TRUE

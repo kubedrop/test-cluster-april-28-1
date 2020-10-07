@@ -1,0 +1,8 @@
+services:
+  event_dispatcher:
+    class: Drupal\event_dispatchers\EventDispatcher\EventDispatcher
+    arguments: ['@service_container']
+
+  event_dispatchers.event_service:
+    class: Drupal\event_dispatchers\Services\EventServices
+    arguments: ['@config.factory']
